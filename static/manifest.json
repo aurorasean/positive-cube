@@ -1,0 +1,20 @@
+{
+    "name": "The Positive Cube",
+    "version": "1.0.0",
+    "description": "The positive cube",
+    "author": "Sean Thomas",
+    "start_url": "/",
+    "lang": "en",
+    "display": "standalone",
+    "background_color": "#181e2b",
+    "theme_color": "#181e2b",
+    "homepage_url": "https://github.com/aurorasean/positive-cube",
+    "icons": [
+        {
+            "src": "icon512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "manifest_version": 2
+}
