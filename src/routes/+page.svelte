@@ -33,12 +33,13 @@
 	let labelText = "The\nPositive\nCube";
 	let canvas: SC.Canvas;
 	let isHovered = false;
+	$: cubeZoom = 6;
 	$: mainCubePosition = [0, 0, 0] as [number, number, number];
 	$: cubePos = [0, 0, $hoverPosition] as [number, number, number];
 	$: cubeRotation = [0, $rotationPosition, 0] as [number, number, number];
 	$: threeCamera = camera?.$$.ctx[camera?.$$.ctx.length - 1];
 	$: hourGlassPos = [0, 0.0, 0.6] as [number, number, number];
-	let defaultLabelposition = .95
+	let defaultLabelposition = 0.95;
 	$: labelPosition = [0, 0, defaultLabelposition] as [number, number, number];
 	let hourGlassRoationTween = tweened(THREE.MathUtils.degToRad(0), {
 		duration: 1000,
@@ -52,11 +53,11 @@
 
 	function loadGLTF() {
 		const loader = new GLTFLoader();
-		return loader.loadAsync("Cube-Test.glb");
+		return loader.loadAsync("./Cube-Test.glb");
 	}
 	function loadGLTFHover() {
 		const loader = new GLTFLoader();
-		return loader.loadAsync("Cube-Test_hover.glb");
+		return loader.loadAsync("./Cube-Test_hover.glb");
 	}
 	const loadLabel = (
 		textValue: string = labelText,
@@ -77,12 +78,14 @@
 	$: font, labelText, loadLabel();
 
 	const fontLoader = new FontLoader();
-	fontLoader.load(
-		"fonts/helvetiker_regular.typeface.json",
-		function (fontValue) {
-			font = fontValue;
-		},
-	);
+	const loadFont = () => {
+		fontLoader.load(
+			"./helvetiker_regular.typeface.json",
+			function (fontValue) {
+				font = fontValue;
+			},
+		);
+	};
 
 	const loadHourGlassMesh = () => {
 		const geometry = new THREE.PlaneGeometry(1, 1);
@@ -101,6 +104,9 @@
 
 	onMount(() => {
 		// load the hover model
+		window.addEventListener("resize", handleWindowSize);
+		handleWindowSize();
+
 		loadGLTFHover().then((_model) => {
 			var material2 = new THREE.MeshLambertMaterial({
 				color: 0x00ff22,
@@ -116,6 +122,7 @@
 			// modelHover = _model;
 		});
 		// load the main model
+		loadFont();
 		loadGLTF().then((_model) => (model = _model));
 		loadHourGlassMesh();
 	});
@@ -230,6 +237,16 @@
 			});
 		});
 	};
+	const handleWindowSize = () => {
+		if (window.innerWidth < 600) {
+			cubeZoom = 7;
+		} else if (window.innerWidth < 800) {
+			cubeZoom = 6;
+		} else {
+			cubeZoom = 5;
+		}
+		cubeZoom = window.innerWidth < 600 ? 7 : 6;
+	};
 	const animateTheTextOneCharAtATime = (nextFunction: Function) => {
 		const randomText = texts[Math.floor(Math.random() * texts.length)];
 		const textValue = splitTextAtCharCount(randomText.text, 17);
@@ -336,8 +353,8 @@
 				enablePan={false}
 				maxPolarAngle={1.6}
 				minPolarAngle={1}
-				maxDistance={5}
-				minDistance={5}
+				maxDistance={cubeZoom}
+				minDistance={cubeZoom}
 				dampingFactor={0.1}
 				enableDamping={true}
 			/>
