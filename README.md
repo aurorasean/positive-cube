@@ -8,8 +8,7 @@ When you need motivation to finish
 
 The Positive Cube
 
-
-![The Positive Cube](build/icon512.png)
+![The Positive Cube](static/icon512.png)
 
 [Visit Positive Cube](https://positive-cube.firebaseapp.com)
 
