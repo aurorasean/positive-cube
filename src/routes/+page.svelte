@@ -238,9 +238,14 @@
 			
 			animateTheTextOneCharAtATime(() => {
 				isPlaying = false;
+				// Calculate total animation duration and add display time
+				const textLength = currentContent ? contentManager.formatContentForDisplay(currentContent, 17).length : 0;
+				const animationDuration = textLength * 50; // 50ms per character
+				const displayTime = 8000; // 8 seconds to read
+				
 				setTimeout(() => {
 					setLabelBackToDefault();
-				}, 8000); // Show content longer to read
+				}, displayTime); // Only wait for display time since animation is already complete
 			});
 		});
 	};
@@ -281,12 +286,13 @@
 		
 		const textValue = contentManager.formatContentForDisplay(currentContent, 17);
 		const textEmpty = textValue.replace(/./g, " ");
+		const contentColor = currentContent.color; // Store the color to avoid null access
 		
 		for (let i = 0; i < textValue.length; i++) {
 			setTimeout(() => {
 				loadLabel(
 					textValue.substring(0, i) + textEmpty.substring(i),
-					currentContent!.color,
+					contentColor, // Use stored color instead of accessing currentContent.color
 				);
 				if (i === textValue.length - 1) {
 					nextFunction();
