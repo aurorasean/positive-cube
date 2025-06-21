@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tweened } from "svelte/motion";
 	import { texts } from "$lib/texts";
+	import { ContentManager, type ContentItem } from "$lib/contentManager";
 
 	import * as SC from "svelte-cubed";
 	import { onMount } from "svelte";
@@ -10,6 +11,7 @@
 	import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 	import { Font, FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 	import { linear, quartInOut } from "svelte/easing";
+	
 	let defaultStartHover = -0.5;
 	let defaultRotationTimer = 500;
 	let defaultEndHover = 0.01;
@@ -27,12 +29,16 @@
 	let modelHover: THREE.Mesh;
 	let label: THREE.Mesh;
 	let hourGlass: THREE.Mesh;
+	let backgroundPlane: THREE.Mesh;
 
 	let font: Font;
 	let camera: any;
 	let labelText = "The\nPositive\nCube";
 	let canvas: SC.Canvas;
 	let isHovered = false;
+	let contentManager = ContentManager.getInstance();
+	let currentContent: ContentItem | null = null;
+	
 	$: cubeZoom = 6;
 	$: mainCubePosition = [0, 0, 0] as [number, number, number];
 	$: cubePos = [0, 0, $hoverPosition] as [number, number, number];
@@ -41,6 +47,8 @@
 	$: hourGlassPos = [0, 0.0, 0.6] as [number, number, number];
 	let defaultLabelposition = 0.95;
 	$: labelPosition = [0, 0, defaultLabelposition] as [number, number, number];
+	$: backgroundPosition = [0, 0, -2] as [number, number, number];
+	
 	let hourGlassRoationTween = tweened(THREE.MathUtils.degToRad(0), {
 		duration: 1000,
 		easing: quartInOut,
@@ -55,10 +63,12 @@
 		const loader = new GLTFLoader();
 		return loader.loadAsync("./Cube-Test.glb");
 	}
+	
 	function loadGLTFHover() {
 		const loader = new GLTFLoader();
 		return loader.loadAsync("./Cube-Test_hover.glb");
 	}
+	
 	const loadLabel = (
 		textValue: string = labelText,
 		color: number = 0x00ff00,
@@ -102,8 +112,32 @@
 		hourGlass = plane;
 	};
 
+	const loadBackgroundPlane = (imageUrl?: string) => {
+		const geometry = new THREE.PlaneGeometry(8, 6);
+		let material: THREE.MeshBasicMaterial;
+		
+		if (imageUrl) {
+			const texture = new THREE.TextureLoader().load(imageUrl);
+			texture.minFilter = THREE.LinearFilter;
+			texture.magFilter = THREE.LinearFilter;
+			
+			material = new THREE.MeshBasicMaterial({
+				map: texture,
+				transparent: true,
+				opacity: 0.3,
+			});
+		} else {
+			material = new THREE.MeshBasicMaterial({
+				color: 0xffffff,
+				transparent: true,
+				opacity: 0.1,
+			});
+		}
+		
+		backgroundPlane = new THREE.Mesh(geometry, material);
+	};
+
 	onMount(() => {
-		// load the hover model
 		window.addEventListener("resize", handleWindowSize);
 		handleWindowSize();
 
@@ -119,12 +153,12 @@
 					modelHover = child;
 				}
 			});
-			// modelHover = _model;
 		});
-		// load the main model
+		
 		loadFont();
 		loadGLTF().then((_model) => (model = _model));
 		loadHourGlassMesh();
+		loadBackgroundPlane();
 	});
 
 	let isInCanvas = false;
@@ -132,6 +166,7 @@
 	const handleMouseEnter = (e: MouseEvent) => {
 		isInCanvas = true;
 	};
+	
 	const handleMouseLeave = (e: MouseEvent) => {
 		isInCanvas = false;
 	};
@@ -140,6 +175,7 @@
 		let elem = canvas.$$.ctx[1];
 		elem.style.cursor = "default";
 	};
+	
 	const setToPoint = () => {
 		let elem = canvas.$$.ctx[1];
 		elem.style.cursor = "pointer";
@@ -156,7 +192,6 @@
 		const intersects = raycaster.intersectObjects([model.scene]);
 		if (intersects.length > 0) {
 			hoverPosition.set(defaultEndHover);
-			// need to change the cursor to pointer
 			setToPoint();
 			isHovered = true;
 			return true;
@@ -174,50 +209,42 @@
 		let y = -(clientY / elem.clientHeight) * 2 + 1;
 		return new THREE.Vector2(x, y);
 	};
+	
 	const handleMouseMove = (e: MouseEvent) => {
 		handleEvent(e.clientX, e.clientY);
 	};
 
-	const splitTextAtCharCount = (text: string, charCount: number) => {
-		let splitText = text.split(" ");
-		let newText = "";
-		let count = 0;
-		for (let i = 0; i < splitText.length; i++) {
-			if (count + splitText[i].length > charCount) {
-				newText += "\n" + splitText[i] + " ";
-				count = splitText[i].length;
-			} else {
-				newText += splitText[i] + " ";
-				count += splitText[i].length;
-			}
-		}
-		return newText;
-	};
-
 	const setLabelBackToDefault = () => {
 		loadLabel();
+		currentContent = null;
+		// Reset background to default
+		if (backgroundPlane) {
+			loadBackgroundPlane();
+		}
 	};
 
 	const handleRandomSelector = () => {
-		// start the random selector
 		isPlaying = true;
 		hoverPosition.set(defaultStartHover);
 
-		// need to show thinking mode first
 		showThinking(() => {
+			// Get random content from the content manager
+			currentContent = contentManager.getRandomContent();
+			
+			// Update background if there's an image
+			if (currentContent.image && backgroundPlane) {
+				loadBackgroundPlane(currentContent.image.url);
+			}
+			
 			animateTheTextOneCharAtATime(() => {
-				// after the text is done, show the hour glass
 				isPlaying = false;
 				setTimeout(() => {
 					setLabelBackToDefault();
-				}, 5000);
+				}, 8000); // Show content longer to read
 			});
 		});
-
-		// after time x, show the normal text again
-
-		// get random text from texts
 	};
+	
 	const showThinking = (nextFunction: Function) => {
 		labelPosition[2] = 0.6;
 		hourGlassPos[2] = defaultLabelposition;
@@ -237,6 +264,7 @@
 			});
 		});
 	};
+	
 	const handleWindowSize = () => {
 		if (window.innerWidth < 600) {
 			cubeZoom = 7;
@@ -247,68 +275,79 @@
 		}
 		cubeZoom = window.innerWidth < 600 ? 7 : 6;
 	};
+	
 	const animateTheTextOneCharAtATime = (nextFunction: Function) => {
-		const randomText = texts[Math.floor(Math.random() * texts.length)];
-		const textValue = splitTextAtCharCount(randomText.text, 17);
+		if (!currentContent) return;
+		
+		const textValue = contentManager.formatContentForDisplay(currentContent, 17);
 		const textEmpty = textValue.replace(/./g, " ");
+		
 		for (let i = 0; i < textValue.length; i++) {
 			setTimeout(() => {
 				loadLabel(
 					textValue.substring(0, i) + textEmpty.substring(i),
-					randomText.color,
+					currentContent!.color,
 				);
-				// if I am the last character then call the nextFunction
 				if (i === textValue.length - 1) {
 					nextFunction();
 				}
-			}, i * 75);
+			}, i * 50); // Slightly faster animation
 		}
 	};
 
 	let touchStartTime = 0;
 	let isTouchedStill = false;
+	
 	const handleTouchStart = (e: TouchEvent) => {
 		isInCanvas = true;
 		touchStartTime = Date.now();
 		isTouchedStill = true;
 		const inBlock = handleEvent(e.touches[0].clientX, e.touches[0].clientY);
 
-		// if the touch is longer than .5 seconds then it is a click
 		setTimeout(() => {
 			if (isTouchedStill && inBlock && !isPlaying) {
-				// start the random selector
 				handleRandomSelector();
 			}
-		}, 500); // 500ms (0.5 seconds
+		}, 500);
 	};
+	
 	const handleTouchEnd = (e: TouchEvent) => {
 		isInCanvas = false;
 		isTouchedStill = false;
 	};
+	
 	const handleTouchMove = (e: TouchEvent) => {
 		handleEvent(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
 	};
+	
 	const handleMouseClick = (e: MouseEvent) => {
 		if (isHovered && !isPlaying) {
-			// start the random selector
 			handleRandomSelector();
 		}
 	};
-
-	// do something
 </script>
 
 <div style="display: flex; flex-direction: column">
 	<div style="z-index: 1; display: none">
 		<input type="text" bind:value={labelText} />
-		<button on:click={() => hoverPosition.set(defaultEndHover)}
-			>click 1</button
-		>
-		<button on:click={() => hoverPosition.set(defaultStartHover)}
-			>click 0</button
-		>
+		<button on:click={() => hoverPosition.set(defaultEndHover)}>click 1</button>
+		<button on:click={() => hoverPosition.set(defaultStartHover)}>click 0</button>
 		<p>Scale: {$hoverPosition}</p>
 	</div>
+	
+	<!-- Content type indicator -->
+	{#if currentContent}
+		<div style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; font-size: 12px; color: #666;">
+			{#if currentContent.type === 'inspiration'}
+				💡 Daily Inspiration
+			{:else if currentContent.type === 'quote'}
+				📖 Wisdom Quote
+			{:else}
+				✨ Positive Thought
+			{/if}
+		</div>
+	{/if}
+	
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
 		id="canvas"
@@ -320,12 +359,19 @@
 		on:touchend={handleTouchEnd}
 		on:touchmove={handleTouchMove}
 	>
-		​<SC.Canvas
+		<SC.Canvas
 			bind:this={canvas}
 			antialias
 			background={new THREE.Color("white")}
 			stencil
 		>
+			{#if backgroundPlane}
+				<SC.Primitive
+					object={backgroundPlane}
+					position={backgroundPosition}
+				/>
+			{/if}
+			
 			{#if model}
 				<SC.Primitive
 					object={model.scene}
@@ -348,6 +394,7 @@
 					{/if}
 				</SC.Primitive>
 			{/if}
+			
 			<SC.PerspectiveCamera bind:this={camera} position={[1, 1, 3]} />
 			<SC.OrbitControls
 				enablePan={false}
@@ -360,7 +407,6 @@
 			/>
 			<SC.AmbientLight intensity={1} />
 			<SC.DirectionalLight intensity={2} position={[-2, 3, 2]} />
-			​</SC.Canvas
-		>
+		</SC.Canvas>
 	</div>
 </div>
