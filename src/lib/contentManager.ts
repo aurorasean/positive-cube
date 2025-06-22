@@ -250,41 +250,43 @@ export class ContentManager {
 
     private splitTextAtCharCount(text: string, charCount: number): string {
         const lines = text.split('\n');
-        let result = '';
+        const resultLines: string[] = [];
         
         for (let i = 0; i < lines.length; i++) {
-            if (lines[i].trim() === '') {
-                result += '\n';
+            const line = lines[i];
+            
+            if (line.trim() === '') {
+                resultLines.push('');
                 continue;
             }
             
-            const words = lines[i].split(' ');
+            const words = line.split(' ');
             let currentLine = '';
             
-            for (const word of words) {
-                if (currentLine.length + word.length + 1 <= charCount) {
-                    currentLine += (currentLine ? ' ' : '') + word;
+            for (let j = 0; j < words.length; j++) {
+                const word = words[j];
+                
+                // Check if adding this word would exceed the character limit
+                const testLine = currentLine ? `${currentLine} ${word}` : word;
+                
+                if (testLine.length <= charCount) {
+                    currentLine = testLine;
                 } else {
+                    // Current line is full, push it and start a new line with the current word
                     if (currentLine) {
-                        result += currentLine + '\n';
-                        currentLine = word;
-                    } else {
-                        // Word is longer than charCount, just add it
-                        result += word + '\n';
+                        resultLines.push(currentLine);
                     }
+                    currentLine = word;
                 }
             }
             
+            // Don't forget to add the last line if it has content
             if (currentLine) {
-                result += currentLine;
-            }
-            
-            if (i < lines.length - 1) {
-                result += '\n';
+                resultLines.push(currentLine);
             }
         }
         
-        return result;
+        return resultLines.join('\n');
     }
 
     // Debug method to check localStorage status
