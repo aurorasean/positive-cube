@@ -1,6 +1,6 @@
 import { texts } from './texts';
 import { allQuotes, getRandomQuote, type Quote } from './quoteCategories';
-import { getTodaysInspiration, getRandomInspiration, type InspirationIdea } from './inspirationalIdeas';
+import { getTodaysInspiration, getRandomInspiration, dailyInspirations, type InspirationIdea } from './inspirationalIdeas';
 
 export type ContentType = 'quote' | 'inspiration' | 'original';
 
@@ -173,8 +173,6 @@ export class ContentManager {
     }
 
     private getInspirationByIndex(index: number): InspirationIdea {
-        // Import the daily inspirations array directly
-        const { dailyInspirations } = require('./inspirationalIdeas');
         return dailyInspirations[index];
     }
 
