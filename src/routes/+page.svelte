@@ -351,9 +351,6 @@
 						<SC.Primitive object={modelHover} position={cubePos} />
 					{/if}
 
-					{#if label}
-						<SC.Primitive object={label} position={labelPosition} />
-					{/if}
 				</SC.Primitive>
 			{/if}
 			
