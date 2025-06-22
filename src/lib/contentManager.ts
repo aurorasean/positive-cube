@@ -1,7 +1,6 @@
 import { texts } from './texts';
 import { allQuotes, getRandomQuote, type Quote } from './quoteCategories';
 import { getTodaysInspiration, getRandomInspiration, type InspirationIdea } from './inspirationalIdeas';
-import { getRandomImage, type InspirationImage } from './inspirationalImages';
 
 export type ContentType = 'quote' | 'inspiration' | 'original';
 
@@ -13,7 +12,6 @@ export interface ContentItem {
     category?: string;
     action?: string;
     title?: string;
-    image?: InspirationImage;
 }
 
 export class ContentManager {
@@ -57,55 +55,47 @@ export class ContentManager {
 
     private getRandomQuoteContent(): ContentItem {
         const quote = getRandomQuote();
-        const image = getRandomImage();
         
         return {
             text: quote.text,
             color: quote.color,
             type: 'quote',
             author: quote.author,
-            category: quote.category,
-            image
+            category: quote.category
         };
     }
 
     private getRandomInspirationContent(): ContentItem {
         const inspiration = getRandomInspiration();
-        const image = getRandomImage();
         
         return {
             text: inspiration.description,
             color: inspiration.color,
             type: 'inspiration',
             title: inspiration.title,
-            action: inspiration.action,
-            image
+            action: inspiration.action
         };
     }
 
     private getTodaysInspirationContent(): ContentItem {
         const inspiration = getTodaysInspiration();
-        const image = getRandomImage();
         
         return {
             text: inspiration.description,
             color: inspiration.color,
             type: 'inspiration',
             title: inspiration.title,
-            action: inspiration.action,
-            image
+            action: inspiration.action
         };
     }
 
     private getRandomOriginalContent(): ContentItem {
         const originalText = texts[Math.floor(Math.random() * texts.length)];
-        const image = getRandomImage();
         
         return {
             text: originalText.text,
             color: originalText.color,
-            type: 'original',
-            image
+            type: 'original'
         };
     }
 

@@ -29,7 +29,6 @@
 	let modelHover: THREE.Mesh;
 	let label: THREE.Mesh;
 	let hourGlass: THREE.Mesh;
-	let backgroundPlane: THREE.Mesh;
 
 	let font: Font;
 	let camera: any;
@@ -47,7 +46,6 @@
 	$: hourGlassPos = [0, 0.0, 0.6] as [number, number, number];
 	let defaultLabelposition = 0.95;
 	$: labelPosition = [0, 0, defaultLabelposition] as [number, number, number];
-	$: backgroundPosition = [0, 0, -2] as [number, number, number];
 	
 	let hourGlassRoationTween = tweened(THREE.MathUtils.degToRad(0), {
 		duration: 1000,
@@ -112,31 +110,6 @@
 		hourGlass = plane;
 	};
 
-	const loadBackgroundPlane = (imageUrl?: string) => {
-		const geometry = new THREE.PlaneGeometry(8, 6);
-		let material: THREE.MeshBasicMaterial;
-		
-		if (imageUrl) {
-			const texture = new THREE.TextureLoader().load(imageUrl);
-			texture.minFilter = THREE.LinearFilter;
-			texture.magFilter = THREE.LinearFilter;
-			
-			material = new THREE.MeshBasicMaterial({
-				map: texture,
-				transparent: true,
-				opacity: 0.3,
-			});
-		} else {
-			material = new THREE.MeshBasicMaterial({
-				color: 0xffffff,
-				transparent: true,
-				opacity: 0.1,
-			});
-		}
-		
-		backgroundPlane = new THREE.Mesh(geometry, material);
-	};
-
 	onMount(() => {
 		window.addEventListener("resize", handleWindowSize);
 		handleWindowSize();
@@ -158,7 +131,6 @@
 		loadFont();
 		loadGLTF().then((_model) => (model = _model));
 		loadHourGlassMesh();
-		loadBackgroundPlane();
 	});
 
 	let isInCanvas = false;
@@ -217,10 +189,6 @@
 	const setLabelBackToDefault = () => {
 		loadLabel();
 		currentContent = null;
-		// Reset background to default
-		if (backgroundPlane) {
-			loadBackgroundPlane();
-		}
 	};
 
 	const handleRandomSelector = () => {
@@ -230,11 +198,6 @@
 		showThinking(() => {
 			// Get random content from the content manager
 			currentContent = contentManager.getRandomContent();
-			
-			// Update background if there's an image
-			if (currentContent.image && backgroundPlane) {
-				loadBackgroundPlane(currentContent.image.url);
-			}
 			
 			animateTheTextOneCharAtATime(() => {
 				isPlaying = false;
@@ -371,13 +334,6 @@
 			background={new THREE.Color("white")}
 			stencil
 		>
-			{#if backgroundPlane}
-				<SC.Primitive
-					object={backgroundPlane}
-					position={backgroundPosition}
-				/>
-			{/if}
-			
 			{#if model}
 				<SC.Primitive
 					object={model.scene}
