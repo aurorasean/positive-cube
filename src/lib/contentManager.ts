@@ -12,10 +12,12 @@ export interface ContentItem {
     category?: string;
     action?: string;
     title?: string;
+    id?: string; // Add unique identifier
 }
 
 export class ContentManager {
     private static instance: ContentManager;
+    private readonly STORAGE_KEY = 'positive-cube-shown-content';
     
     static getInstance(): ContentManager {
         if (!ContentManager.instance) {
@@ -24,18 +26,96 @@ export class ContentManager {
         return ContentManager.instance;
     }
 
-    getRandomContent(): ContentItem {
-        const contentTypes: ContentType[] = ['quote', 'inspiration', 'original'];
-        const randomType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
+    private getShownContent(): Set<string> {
+        if (typeof window === 'undefined') return new Set();
         
-        switch (randomType) {
+        try {
+            const stored = localStorage.getItem(this.STORAGE_KEY);
+            return stored ? new Set(JSON.parse(stored)) : new Set();
+        } catch {
+            return new Set();
+        }
+    }
+
+    private saveShownContent(shownContent: Set<string>): void {
+        if (typeof window === 'undefined') return;
+        
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify([...shownContent]));
+        } catch {
+            // Ignore localStorage errors
+        }
+    }
+
+    private markAsShown(contentId: string): void {
+        const shownContent = this.getShownContent();
+        shownContent.add(contentId);
+        this.saveShownContent(shownContent);
+    }
+
+    private resetShownContent(): void {
+        if (typeof window === 'undefined') return;
+        
+        try {
+            localStorage.removeItem(this.STORAGE_KEY);
+        } catch {
+            // Ignore localStorage errors
+        }
+    }
+
+    private getAllContentIds(): string[] {
+        const allIds: string[] = [];
+        
+        // Add quote IDs
+        allQuotes.forEach((quote, index) => {
+            allIds.push(`quote-${index}`);
+        });
+        
+        // Add inspiration IDs
+        for (let i = 0; i < 10; i++) { // We have 10 daily inspirations
+            allIds.push(`inspiration-${i}`);
+        }
+        
+        // Add original text IDs
+        texts.forEach((text, index) => {
+            allIds.push(`original-${index}`);
+        });
+        
+        return allIds;
+    }
+
+    private getUnshownContent(): string[] {
+        const allIds = this.getAllContentIds();
+        const shownContent = this.getShownContent();
+        
+        const unshown = allIds.filter(id => !shownContent.has(id));
+        
+        // If all content has been shown, reset and return all IDs
+        if (unshown.length === 0) {
+            this.resetShownContent();
+            return allIds;
+        }
+        
+        return unshown;
+    }
+
+    getRandomContent(): ContentItem {
+        const unshownIds = this.getUnshownContent();
+        const randomId = unshownIds[Math.floor(Math.random() * unshownIds.length)];
+        
+        this.markAsShown(randomId);
+        
+        const [type, indexStr] = randomId.split('-');
+        const index = parseInt(indexStr);
+        
+        switch (type) {
             case 'quote':
-                return this.getRandomQuoteContent();
+                return this.getQuoteContent(index);
             case 'inspiration':
-                return this.getRandomInspirationContent();
+                return this.getInspirationContent(index);
             case 'original':
             default:
-                return this.getRandomOriginalContent();
+                return this.getOriginalContent(index);
         }
     }
 
@@ -47,10 +127,55 @@ export class ContentManager {
         if (dayOfWeek === 0 || dayOfWeek === 6) { // Weekend - inspiration
             return this.getTodaysInspirationContent();
         } else if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) { // Mon, Wed, Fri - quotes
-            return this.getRandomQuoteContent();
+            return this.getRandomContent(); // Use random to respect localStorage
         } else { // Tue, Thu - original
-            return this.getRandomOriginalContent();
+            return this.getRandomContent(); // Use random to respect localStorage
         }
+    }
+
+    private getQuoteContent(index: number): ContentItem {
+        const quote = allQuotes[index];
+        
+        return {
+            text: quote.text,
+            color: quote.color,
+            type: 'quote',
+            author: quote.author,
+            category: quote.category,
+            id: `quote-${index}`
+        };
+    }
+
+    private getInspirationContent(index: number): ContentItem {
+        // Use modulo to cycle through inspirations if index is out of bounds
+        const inspirationIndex = index % 10;
+        const inspiration = this.getInspirationByIndex(inspirationIndex);
+        
+        return {
+            text: inspiration.description,
+            color: inspiration.color,
+            type: 'inspiration',
+            title: inspiration.title,
+            action: inspiration.action,
+            id: `inspiration-${index}`
+        };
+    }
+
+    private getOriginalContent(index: number): ContentItem {
+        const originalText = texts[index];
+        
+        return {
+            text: originalText.text,
+            color: originalText.color,
+            type: 'original',
+            id: `original-${index}`
+        };
+    }
+
+    private getInspirationByIndex(index: number): InspirationIdea {
+        // Import the daily inspirations array directly
+        const { dailyInspirations } = require('./inspirationalIdeas');
+        return dailyInspirations[index];
     }
 
     private getRandomQuoteContent(): ContentItem {
@@ -113,7 +238,7 @@ export class ContentManager {
                 displayText += `\n\n- ${content.author}`;
             }
         }
-      displayText += "\n \n \n "
+        displayText += "\n \n \n "
         
         return this.splitTextAtCharCount(displayText, maxCharsPerLine);
     }
@@ -155,5 +280,17 @@ export class ContentManager {
         }
         
         return result;
+    }
+
+    // Debug method to check localStorage status
+    getStorageStatus(): { shown: number; total: number; remaining: number } {
+        const allIds = this.getAllContentIds();
+        const shownContent = this.getShownContent();
+        
+        return {
+            shown: shownContent.size,
+            total: allIds.length,
+            remaining: allIds.length - shownContent.size
+        };
     }
 }
