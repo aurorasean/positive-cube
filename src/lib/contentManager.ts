@@ -252,9 +252,7 @@ export class ContentManager {
         const lines = text.split('\n');
         const resultLines: string[] = [];
         
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            
+        for (const line of lines) {
             if (line.trim() === '') {
                 resultLines.push('');
                 continue;
@@ -263,9 +261,7 @@ export class ContentManager {
             const words = line.split(' ');
             let currentLine = '';
             
-            for (let j = 0; j < words.length; j++) {
-                const word = words[j];
-                
+            for (const word of words) {
                 // Check if adding this word would exceed the character limit
                 const testLine = currentLine ? `${currentLine} ${word}` : word;
                 
@@ -280,7 +276,7 @@ export class ContentManager {
                 }
             }
             
-            // Don't forget to add the last line if it has content
+            // Always add the current line if it has content (this was the missing piece!)
             if (currentLine) {
                 resultLines.push(currentLine);
             }
