@@ -77,8 +77,18 @@
 			depth: 0.001,
 		});
 		const labelmat = new THREE.MeshBasicMaterial({ color: color });
-		labelgeo.center();
-		labelgeo.computeBoundingSphere();
+		
+		// Compute bounding box for proper centering
+		labelgeo.computeBoundingBox();
+		
+		if (labelgeo.boundingBox) {
+			// Center horizontally (keep existing behavior)
+			const centerOffsetX = -0.5 * (labelgeo.boundingBox.max.x - labelgeo.boundingBox.min.x);
+			// Center vertically
+			const centerOffsetY = -0.5 * (labelgeo.boundingBox.max.y - labelgeo.boundingBox.min.y);
+			
+			labelgeo.translate(centerOffsetX, centerOffsetY, 0);
+		}
 
 		label = new THREE.Mesh(labelgeo, labelmat);
 	};
