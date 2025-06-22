@@ -113,7 +113,7 @@ export class ContentManager {
                 displayText += `\n\n- ${content.author}`;
             }
         }
-      displayText += "\n\n\n"
+      displayText += "\n \n \n "
         
         return this.splitTextAtCharCount(displayText, maxCharsPerLine);
     }
