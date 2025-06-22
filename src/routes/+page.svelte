@@ -304,19 +304,6 @@
 		<p>Scale: {$hoverPosition}</p>
 	</div>
 	
-	<!-- Content type indicator -->
-	{#if currentContent}
-		<div style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; font-size: 12px; color: #666;">
-			{#if currentContent.type === 'inspiration'}
-				💡 Daily Inspiration
-			{:else if currentContent.type === 'quote'}
-				📖 Wisdom Quote
-			{:else}
-				✨ Positive Thought
-			{/if}
-		</div>
-	{/if}
-	
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
 		id="canvas"
@@ -351,6 +338,9 @@
 						<SC.Primitive object={modelHover} position={cubePos} />
 					{/if}
 
+					{#if label}
+						<SC.Primitive object={label} position={labelPosition} />
+					{/if}
 				</SC.Primitive>
 			{/if}
 			
