@@ -197,7 +197,7 @@
 
 		showThinking(() => {
 			// Get random content from the content manager
-			currentContent = contentManager.getRandomContent();
+			currentContent = `${contentManager.getRandomContent()}.` ;
 			
 			animateTheTextOneCharAtATime(() => {
 				isPlaying = false;
