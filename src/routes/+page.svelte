@@ -190,15 +190,16 @@
 		loadLabel();
 		currentContent = null;
 	};
-
+	let timeoutReset = null;
 	const handleRandomSelector = () => {
 		isPlaying = true;
 		hoverPosition.set(defaultStartHover);
-
+	    if(timeoutReset) {
+			clearTimeout(timeoutReset)
+		}
 		showThinking(() => {
 			// Get random content from the content manager
-			currentContent = `${contentManager.getRandomContent()}.` ;
-			
+			currentContent = contentManager.getRandomContent();
 			animateTheTextOneCharAtATime(() => {
 				isPlaying = false;
 				// Calculate total animation duration and add display time
@@ -206,7 +207,7 @@
 				const animationDuration = textLength * 50; // 50ms per character
 				const displayTime = 8000; // 8 seconds to read
 				
-				setTimeout(() => {
+				timeoutReset = setTimeout(() => {
 					setLabelBackToDefault();
 				}, displayTime); // Only wait for display time since animation is already complete
 			});

@@ -242,7 +242,7 @@ export class ContentManager {
         
         // Add 3 empty lines if text is longer than 8 lines
         if (lineCount > 8) {
-            return formattedText + "\n \n \n ";
+            return formattedText + "\n \n \n.";
         }
         
         return formattedText;
