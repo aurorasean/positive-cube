@@ -251,13 +251,13 @@
 		const textEmpty = textValue.replace(/./g, " ");
 		const contentColor = currentContent.color; // Store the color to avoid null access
 		
-		for (let i = 0; i < textValue.length; i++) {
+		for (let i = 0; i <= textValue.length; i++) {
 			setTimeout(() => {
 				loadLabel(
 					textValue.substring(0, i) + textEmpty.substring(i),
 					contentColor, // Use stored color instead of accessing currentContent.color
 				);
-				if (i === textValue.length - 1) {
+				if (i === textValue.length) {
 					nextFunction();
 				}
 			}, i * 50); // Slightly faster animation
